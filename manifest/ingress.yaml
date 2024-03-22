@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: linktree-web-ing
+spec:
+  rules:
+  - host: "godtolo.cubit.com.uy"
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: linktree-web-svc
+            port:
+              number: 80

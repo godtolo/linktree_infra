@@ -1,0 +1,151 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql-1688878353
+  labels:
+    app.kubernetes.io/component: primary
+    app.kubernetes.io/instance: postgresql-1688878353
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-12.6.4
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: primary
+      app.kubernetes.io/instance: postgresql-1688878353
+      app.kubernetes.io/name: postgresql
+  template:
+    metadata:
+      name: postgresql-1688878353
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: primary
+        app.kubernetes.io/instance: postgresql-1688878353
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: postgresql
+        helm.sh/chart: postgresql-12.6.4
+    spec:
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+      containers:
+        - name: postgresql
+          image: docker.io/bitnami/postgresql:15.3.0-debian-11-r17
+          ports:
+            - name: tcp-postgresql
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: BITNAMI_DEBUG
+              value: 'false'
+            - name: POSTGRESQL_PORT_NUMBER
+              value: '5432'
+            - name: POSTGRESQL_VOLUME_DIR
+              value: /bitnami/postgresql
+            - name: PGDATA
+              value: /bitnami/postgresql/data
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-1688878353
+                  key: postgres-password
+            - name: POSTGRESQL_ENABLE_LDAP
+              value: 'no'
+            - name: POSTGRESQL_ENABLE_TLS
+              value: 'no'
+            - name: POSTGRESQL_LOG_HOSTNAME
+              value: 'false'
+            - name: POSTGRESQL_LOG_CONNECTIONS
+              value: 'false'
+            - name: POSTGRESQL_LOG_DISCONNECTIONS
+              value: 'false'
+            - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
+              value: 'off'
+            - name: POSTGRESQL_CLIENT_MIN_MESSAGES
+              value: error
+            - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
+              value: pgaudit
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: data
+              mountPath: /bitnami/postgresql
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-c'
+                - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-c'
+                - '-e'
+                - >
+                  exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f
+                  /bitnami/postgresql/.initialized ]
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 6
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1001
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: default
+      serviceAccount: default
+      securityContext:
+        fsGroup: 1001
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: primary
+                    app.kubernetes.io/instance: postgresql-1688878353
+                    app.kubernetes.io/name: postgresql
+                topologyKey: kubernetes.io/hostname
+      schedulerName: default-scheduler
+  volumeClaimTemplates:
+    - kind: PersistentVolumeClaim
+      apiVersion: v1
+      metadata:
+        name: data
+        creationTimestamp: null
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 8Gi
+        volumeMode: Filesystem
+      status:
+        phase: Pending
+  serviceName: postgresql-1688878353-hl
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  revisionHistoryLimit: 10

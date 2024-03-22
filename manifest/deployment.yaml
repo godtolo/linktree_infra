@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linktree-web-ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: linktree-web-ui
+  template:
+    metadata:
+      labels:
+        app: linktree-web-ui
+    spec:
+      containers:
+        - name: linktree-web-ui
+          image: godtolo/godtolo-web:latest
+          ports:
+            - containerPort: 80
